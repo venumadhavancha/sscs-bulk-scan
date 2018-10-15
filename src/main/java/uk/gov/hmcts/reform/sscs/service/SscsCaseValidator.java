@@ -22,9 +22,10 @@ public class SscsCaseValidator implements CaseValidator {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
         // validate and populate error/warning lists here
+
         if (displayCaseError) {
             errors.add("Invalid NINO");
-            errors.add("Invalid Apppeal details");
+            errors.add("Invalid Appeal details");
         }
 
         if (displayCaseWarning) {
