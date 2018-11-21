@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static uk.gov.hmcts.reform.sscs.common.TestHelper.*;
 
+import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import uk.gov.hmcts.reform.sscs.bulkscancore.domain.HandlerResponse;
 import uk.gov.hmcts.reform.sscs.bulkscancore.domain.Token;
 import uk.gov.hmcts.reform.sscs.ccd.domain.Appeal;
 import uk.gov.hmcts.reform.sscs.ccd.domain.MrnDetails;
+import uk.gov.hmcts.reform.sscs.exceptions.CaseDataHelperException;
 
 public class SscsCaseDataHandlerTest {
 
@@ -177,5 +179,14 @@ public class SscsCaseDataHandlerTest {
         verify(caseDataHelper).createCase(transformedCase, TEST_USER_AUTH_TOKEN, TEST_SERVICE_AUTH_TOKEN, TEST_USER_ID, "appealCreated");
         assertEquals("ScannedRecordCaseCreated", ((HandlerResponse) response).getState());
         assertEquals("1", ((HandlerResponse) response).getCaseId());
+    }
+
+    @Test(expected = CaseDataHelperException.class)
+    public void shouldThrowNotificationClientRuntimeExceptionForAnyNotificationException() throws Exception {
+        doThrow(new NotificationClientException(new UnknownHostException()))
+            .when(CaseDataHelper::createCase)
+            .send();
+
+        sscsCaseDataHandler.handle(caseDataHelper, transformedCase, TEST_USER_AUTH_TOKEN, TEST_SERVICE_AUTH_TOKEN, TEST_USER_ID, "appealCreated", CaseDataHelper::createCase);
     }
 }

@@ -6,10 +6,10 @@ import uk.gov.hmcts.reform.logging.exception.AlertLevel;
 import uk.gov.hmcts.reform.logging.exception.UnknownErrorCodeException;
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class BulkScanServiceException extends UnknownErrorCodeException {
+public class CaseDataRuntimeException extends UnknownErrorCodeException {
 
-    public BulkScanServiceException(String exceptionId, Exception ex) {
-        super(AlertLevel.P3, format("Exception thrown for case [%s]", exceptionId), ex);
+    public CaseDataRuntimeException(String exceptionId, Exception ex) {
+        super(AlertLevel.P3, format("Exception thrown for exception [%s]", exceptionId), ex);
     }
 
 }
