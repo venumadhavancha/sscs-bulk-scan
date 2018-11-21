@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.sscs.handler;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
 
+import java.net.UnknownHostException;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,8 @@ import uk.gov.hmcts.reform.sscs.bulkscancore.domain.Token;
 import uk.gov.hmcts.reform.sscs.bulkscancore.handlers.CaseDataHandler;
 import uk.gov.hmcts.reform.sscs.ccd.domain.Appeal;
 import uk.gov.hmcts.reform.sscs.ccd.domain.MrnDetails;
+import uk.gov.hmcts.reform.sscs.exceptions.BulkScanRuntimeException;
+import uk.gov.hmcts.reform.sscs.exceptions.BulkScanServiceException;
 
 @Component
 @Slf4j
@@ -44,12 +47,15 @@ public class SscsCaseDataHandler implements CaseDataHandler {
 
         if (canCreateCase(caseValidationResponse, ignoreWarnings)) {
             String eventId = findEventToCreateCase(caseValidationResponse);
+            try {
+                Long caseId = caseDataHelper.createCase(caseValidationResponse.getTransformedCase(), token.getUserAuthToken(), token.getServiceAuthToken(), token.getUserId(), eventId);
 
-            Long caseId = caseDataHelper.createCase(caseValidationResponse.getTransformedCase(), token.getUserAuthToken(), token.getServiceAuthToken(), token.getUserId(), eventId);
+                log.info("Case created with caseId {} from exception record id {}", caseId, exceptionRecordId);
 
-            log.info("Case created with caseId {} from exception record id {}", caseId, exceptionRecordId);
-
-            return HandlerResponse.builder().state("ScannedRecordCaseCreated").caseId(String.valueOf(caseId)).build();
+                return HandlerResponse.builder().state("ScannedRecordCaseCreated").caseId(String.valueOf(caseId)).build();
+            } catch (Exception e) {
+                wrapAndThrowBulkScanException(exceptionRecordId, e);
+            }
         }
         return null;
     }
@@ -75,5 +81,17 @@ public class SscsCaseDataHandler implements CaseDataHandler {
             return LocalDate.parse(mrnDetails.getMrnDate());
         }
         return null;
+    }
+
+    private void wrapAndThrowBulkScanException(String exceptionId, Exception ex) {
+        if (ex.getCause() instanceof UnknownHostException) {
+            BulkScanRuntimeException exception = new BulkScanRuntimeException(exceptionId, ex);
+            log.error("Runtime error on CCD for exception id: " + exceptionId, exception);
+            throw exception;
+        } else {
+            BulkScanServiceException exception = new BulkScanServiceException(exceptionId, ex);
+            log.error("Error on CCD for exception id: " + exceptionId, exception);
+            throw exception;
+        }
     }
 }
