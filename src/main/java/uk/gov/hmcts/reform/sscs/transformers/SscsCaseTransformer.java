@@ -45,6 +45,7 @@ public class SscsCaseTransformer implements CaseTransformer {
 
         transformed.put("appeal", appeal);
         transformed.put("sscsDocument", sscsDocuments);
+        transformed.put("evidencePresent", hasEvidence(sscsDocuments));
         transformed.put("bulkScanCaseReference", caseDetails.getCaseId());
 
         if (appeal.getAppellant() != null) {
@@ -292,5 +293,9 @@ public class SscsCaseTransformer implements CaseTransformer {
             }
         }
         return documentDetails;
+    }
+
+    private String hasEvidence(List<SscsDocument> sscsDocuments) {
+        return (null == sscsDocuments || sscsDocuments.isEmpty()) ? "No" : "Yes";
     }
 }

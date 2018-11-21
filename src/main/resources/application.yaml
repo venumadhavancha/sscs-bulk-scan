@@ -19,12 +19,25 @@ ccd:
   nonCompliantEventId: nonCompliant
 
 core_case_data:
+  jurisdictionId: ${CORE_CASE_DATA_JURISDICTION_ID:SSCS}
+  caseTypeId: ${CORE_CASE_DATA_CASE_TYPE_ID:Benefit}
   api:
     url: http://localhost:4452
 
 idam:
+  url: http://localhost:4501
   s2s-auth:
-    url: http://localhost:4502
+    totp_secret: ${S2S_SECRET:AAAAAAAAAAAAAAAA}
+    microservice: ${IDAM_S2S_AUTH_MICROSERVICE:ccd_data}
+    url: ${IDAM_S2S_AUTH:http://localhost:4502}
+  oauth2:
+    user:
+      email: SSCS_SYSTEM_UPDATE
+      password: SSCS_SYSTEM_UPDATE
+    client:
+      id: sscs
+      secret: QM5RQQ53LZFOSIXJ
+    redirectUrl: ${IDAM_OAUTH2_REDIRECT_URL:https://localhost:9000/poc}
 
 allowed-services-for-callback : ccd_data  # comma separated list of service names
 
@@ -49,3 +62,5 @@ robotics:
     subject: ${ROBOTICS_EMAIL_SUBJECT:Robotics Data}
     message: ${ROBOTICS_EMAIL_MESSAGE:Please find attached the robotics json file \nPlease do not respond to this email}
   schema.resource.location: /schema/sscs-robotics.json
+
+document_management.url: ${DOCUMENT_MANAGEMENT_URL:http://localhost:4506}
