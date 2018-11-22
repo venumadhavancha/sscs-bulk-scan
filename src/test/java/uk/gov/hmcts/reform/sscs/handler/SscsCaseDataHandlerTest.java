@@ -3,6 +3,7 @@ package uk.gov.hmcts.reform.sscs.handler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -27,6 +28,7 @@ import uk.gov.hmcts.reform.sscs.bulkscancore.domain.HandlerResponse;
 import uk.gov.hmcts.reform.sscs.bulkscancore.domain.Token;
 import uk.gov.hmcts.reform.sscs.ccd.domain.Appeal;
 import uk.gov.hmcts.reform.sscs.ccd.domain.MrnDetails;
+import uk.gov.hmcts.reform.sscs.ccd.exception.CcdException;
 import uk.gov.hmcts.reform.sscs.exceptions.CaseDataHelperException;
 
 public class SscsCaseDataHandlerTest {
@@ -182,11 +184,18 @@ public class SscsCaseDataHandlerTest {
     }
 
     @Test(expected = CaseDataHelperException.class)
-    public void shouldThrowNotificationClientRuntimeExceptionForAnyNotificationException() throws Exception {
-        doThrow(new NotificationClientException(new UnknownHostException()))
-            .when(CaseDataHelper::createCase)
-            .send();
+    public void shouldThrowCaseDataHelperExceptionForAnyException() throws Exception {
 
-        sscsCaseDataHandler.handle(caseDataHelper, transformedCase, TEST_USER_AUTH_TOKEN, TEST_SERVICE_AUTH_TOKEN, TEST_USER_ID, "appealCreated", CaseDataHelper::createCase);
+        Appeal appeal = Appeal.builder().mrnDetails(MrnDetails.builder().build()).build();
+        Map<String, Object> transformedCase = new HashMap<>();
+        transformedCase.put("appeal", appeal);
+
+        given(caseDataHelper.createCase(
+            transformedCase, TEST_USER_AUTH_TOKEN, TEST_SERVICE_AUTH_TOKEN, TEST_USER_ID, "appealCreated")).willThrow(new RuntimeException());
+
+        CaseResponse caseValidationResponse = CaseResponse.builder().transformedCase(transformedCase).build();
+
+        CallbackResponse response =  sscsCaseDataHandler.handle(caseValidationResponse, false,
+            Token.builder().userAuthToken(TEST_USER_AUTH_TOKEN).serviceAuthToken(TEST_SERVICE_AUTH_TOKEN).userId(TEST_USER_ID).build(), null);
     }
 }
